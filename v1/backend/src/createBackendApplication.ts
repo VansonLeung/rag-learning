@@ -1,45 +1,34 @@
 import express from 'express';
-import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { ZodError } from 'zod';
-import { openApplicationDatabase } from './database/openApplicationDatabase.js';
-import { createApplicationEventBus } from './events/applicationEventBus.js';
-import { createApplicationSettingsRepository } from './repositories/applicationSettingsRepository.js';
-import { createExplorerNodeRepository } from './repositories/explorerNodeRepository.js';
-import { createDocumentUploadService } from './services/ingestion/documentUploadService.js';
-import { createDocumentIndexingJobService } from './services/ingestion/documentIndexingJobService.js';
-import { createDocumentRetrievalService } from './services/retrieval/documentRetrievalService.js';
-import { createGroundedAnswerService } from './services/retrieval/groundedAnswerService.js';
-import { createApplicationRouter } from './routes/createApplicationRouter.js';
-import { ApplicationError } from './config/requestValidation.js';
+import { z, ZodError } from 'zod';
+import { ApplicationError, nodeNameSchema } from './config/requestValidation.js';
+import { createWorkspaceRegistryService } from './services/workspaces/workspaceRegistryService.js';
+import {
+  transferExplorerNodes,
+  TransferConflictError,
+} from './services/explorer/transferExplorerNodes.js';
 export async function createBackendApplication(options: {
   dataDirectory: string;
   frontendDirectory?: string;
+  desktopToken?: string;
 }) {
-  await mkdir(options.dataDirectory, { recursive: true, mode: 0o700 });
-  const uploadsDirectory = path.join(options.dataDirectory, 'uploads');
-  await mkdir(uploadsDirectory, { recursive: true, mode: 0o700 });
-  const database = await openApplicationDatabase(path.join(options.dataDirectory, 'postgres'));
-  const events = createApplicationEventBus();
-  const settings = createApplicationSettingsRepository(database);
-  const nodes = createExplorerNodeRepository(database);
-  const upload = createDocumentUploadService(database, nodes, uploadsDirectory);
-  const jobs = createDocumentIndexingJobService(database, settings, events, uploadsDirectory);
-  const retrieve = createDocumentRetrievalService(database, settings, nodes);
-  const answer = createGroundedAnswerService(settings);
+  const workspaces = await createWorkspaceRegistryService(options.dataDirectory);
   const app = express();
   app.disable('x-powered-by');
-  // Local single-user service: reject browser requests from other origins, including simple multipart POSTs.
   app.use('/api', (request, response, next) => {
+    if (options.desktopToken && request.get('x-grove-desktop-token') !== options.desktopToken) {
+      response.status(401).json({ error: 'Desktop session required' });
+      return;
+    }
     const origin = request.get('origin');
     if (origin) {
       let allowed = false;
       try {
         const url = new URL(origin);
         allowed =
+          url.protocol === 'http:' &&
           ['127.0.0.1', 'localhost'].includes(url.hostname) &&
-          [String(process.env.PORT || 3001), '5173'].includes(url.port) &&
-          url.protocol === 'http:';
+          (url.host === request.get('host') || url.port === '5173');
       } catch {}
       if (!allowed) {
         response
@@ -51,20 +40,74 @@ export async function createBackendApplication(options: {
     next();
   });
   app.use(express.json({ limit: '2mb' }));
-  app.use(
-    '/api',
-    createApplicationRouter({
-      database,
-      nodes,
-      settings,
-      events,
-      jobs,
-      uploadsDirectory,
-      upload,
-      retrieve,
-      answer,
-    }),
-  );
+  app.get('/api/health', (_request, response) => response.json({ status: 'ok' }));
+  app.get('/api/workspaces', (_request, response) => response.json(workspaces.listWorkspaces()));
+  app.post('/api/workspaces', async (request, response) => {
+    const { name } = z.object({ name: nodeNameSchema }).parse(request.body);
+    response.status(201).json(await workspaces.createWorkspace(name));
+  });
+  app.patch('/api/workspaces/:id', async (request, response) => {
+    const { name } = z.object({ name: nodeNameSchema }).parse(request.body);
+    response.json(await workspaces.renameWorkspace(String(request.params.id), name));
+  });
+  app.delete('/api/workspaces/:id', async (request, response) => {
+    await workspaces.deleteWorkspace(String(request.params.id));
+    response.json({ ok: true });
+  });
+  app.post('/api/transfers', async (request, response) => {
+    const body = z
+      .object({
+        sourceWorkspaceId: z.string(),
+        targetWorkspaceId: z.string(),
+        nodeIds: z.array(z.string()).min(1).max(1000),
+        destinationFolderId: z.string(),
+        operation: z.enum(['copy', 'move']),
+        conflict: z.enum(['ask', 'keep-both', 'skip', 'replace']).default('ask'),
+      })
+      .parse(request.body);
+    const source = await workspaces.getWorkspace(body.sourceWorkspaceId);
+    source.activeRequests++;
+    try {
+      const target = await workspaces.getWorkspace(body.targetWorkspaceId);
+      target.activeRequests++;
+      try {
+        response.json(await transferExplorerNodes(source, target, body));
+      } finally {
+        target.activeRequests--;
+      }
+    } finally {
+      source.activeRequests--;
+    }
+  });
+  app.use('/api/workspaces/:workspaceId', async (request, response, next) => {
+    try {
+      const runtime = await workspaces.getWorkspace(String(request.params.workspaceId));
+      if (request.path !== '/events') {
+        runtime.activeRequests++;
+        let released = false;
+        const release = () => {
+          if (!released) {
+            runtime.activeRequests--;
+            released = true;
+          }
+        };
+        response.once('finish', release);
+        response.once('close', release);
+      }
+      runtime.router(request, response, next);
+    } catch (error) {
+      next(error);
+    }
+  });
+  // Existing API clients continue to address the original Personal library explicitly.
+  app.use('/api', async (request, response, next) => {
+    try {
+      const runtime = await workspaces.getWorkspace('personal');
+      runtime.router(request, response, next);
+    } catch (error) {
+      next(error);
+    }
+  });
   app.use('/api', (_request, response) =>
     response.status(404).json({ error: 'API route not found' }),
   );
@@ -83,6 +126,10 @@ export async function createBackendApplication(options: {
     ) => {
       if (response.headersSent) {
         response.end();
+        return;
+      }
+      if (error instanceof TransferConflictError) {
+        response.status(409).json({ error: error.message, conflicts: error.names });
         return;
       }
       if (error instanceof ZodError) {
@@ -114,14 +161,15 @@ export async function createBackendApplication(options: {
       if (status === 500) console.error(error instanceof Error ? error.message : 'Internal error');
     },
   );
-  await jobs.start();
+  const initial = await workspaces.getWorkspace(
+    workspaces.listWorkspaces().find((workspace) => workspace.id === 'personal')?.id ??
+      workspaces.listWorkspaces()[0].id,
+  );
   return {
     app,
-    database,
-    jobs,
-    async close() {
-      await jobs.stop();
-      await database.close();
-    },
+    database: initial.database,
+    jobs: initial.jobs,
+    workspaces,
+    close: () => workspaces.close(),
   };
 }

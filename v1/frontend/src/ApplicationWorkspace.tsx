@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useExplorerTransferActions } from './features/explorer/useExplorerTransferActions';
 import {
   Alert,
   App,
@@ -30,7 +31,7 @@ import {
   CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useLibrarySubscriptions } from './hooks/useLibrarySubscriptions';
-import { requestBackend, postBackend } from './api/backendApiClient';
+import { useWorkspaceApi } from './api/WorkspaceApiProvider';
 import type { ExplorerNode, ApplicationSettings } from './types/applicationTypes';
 import { LibraryFolderTree } from './features/explorer/LibraryFolderTree';
 import { ExplorerFileTable } from './features/explorer/ExplorerFileTable';
@@ -44,7 +45,14 @@ import { RetrievalControls, defaultRetrievalOptions } from './features/search/Re
 import { SearchWorkspace } from './features/search/SearchWorkspace';
 import { ChatWorkspace } from './features/chat/ChatWorkspace';
 import { RetrievalComparisonWorkspace } from './features/search/RetrievalComparisonWorkspace';
-export function ApplicationWorkspace() {
+export function ApplicationWorkspace({
+  workspaceId,
+  workspaceSwitcher,
+}: {
+  workspaceId: string;
+  workspaceSwitcher: ReactNode;
+}) {
+  const { requestBackend, postBackend, urlFor } = useWorkspaceApi();
   const { message, modal } = App.useApp();
   const reportError = useCallback(
     (error: unknown) => {
@@ -76,7 +84,16 @@ export function ApplicationWorkspace() {
   const indexed = files.filter((node) => node.status === 'ready').length;
   const activeJobs = jobs.filter((job) => ['queued', 'running'].includes(job.status));
   const folder = nodes.find((node) => node.id === folderId);
-  const currentOptions = { ...options, folderId, fileIds: selectedIds };
+  const selectedFileIds = selectedIds.filter((id) => files.some((file) => file.id === id));
+  const currentOptions = { ...options, folderId, fileIds: selectedFileIds };
+  const transfers = useExplorerTransferActions({
+    workspaceId,
+    folderId,
+    selectedIds,
+    onRefresh: refresh,
+    onUpload: uploadFiles,
+    enabled: tab === 'explorer',
+  });
   const loadSettings = useCallback(() => {
     requestBackend<ApplicationSettings>('/settings')
       .then((settings) =>
@@ -107,7 +124,7 @@ export function ApplicationWorkspace() {
       reportError(error);
     }
   }
-  async function uploadFiles(incoming: File[]) {
+  async function uploadFiles(incoming: File[], destinationFolderId = folderId) {
     if (!incoming.length) return;
     setUploading(true);
     setUploadFailures([]);
@@ -119,7 +136,7 @@ export function ApplicationWorkspace() {
       for (let offset = 0; offset < incoming.length; offset += 5) {
         const batch = incoming.slice(offset, offset + 5);
         const form = new FormData();
-        form.append('parentId', folderId);
+        form.append('parentId', destinationFolderId);
         form.append(
           'paths',
           JSON.stringify(batch.map((file) => file.webkitRelativePath || file.name)),
@@ -149,8 +166,16 @@ export function ApplicationWorkspace() {
     }
   }
   function handleNodeAction(action: string, node: ExplorerNode) {
+    if (action === 'copy' || action === 'cut') {
+      transfers.copySelection(action === 'copy' ? 'copy' : 'move', [node.id]);
+      return;
+    }
+    if (action === 'paste') {
+      transfers.pasteIntoFolder(node.id);
+      return;
+    }
     if (action === 'download') {
-      window.location.href = `/api/nodes/${node.id}/download`;
+      window.location.href = urlFor(`/nodes/${node.id}/download`);
       return;
     }
     if (action === 'reindex') {
@@ -260,18 +285,14 @@ export function ApplicationWorkspace() {
             grove<span className="brand-subtitle">YOUR KNOWLEDGE, CONNECTED</span>
           </span>
         </a>
-        <div className="workspace-name">
-          <span className="workspace-avatar">P</span>
-          <span>
-            Personal workspace<small>Local · private library</small>
-          </span>
-          <span className="online-dot" />
-        </div>
+        {workspaceSwitcher}
         <LibraryFolderTree
           nodes={nodes}
           folderId={folderId}
           onSelectFolder={selectFolder}
           onCreateFolder={openCreateFolder}
+          dragSourceProps={transfers.dragSourceProps}
+          dropTargetProps={transfers.dropTargetProps}
         />
         <div className="sidebar-bottom">
           <div className="library-health">
@@ -432,9 +453,17 @@ export function ApplicationWorkspace() {
                   </span>
                 </div>
                 <Space wrap>
+                  {transfers.clipboard && (
+                    <Button onClick={() => transfers.pasteIntoFolder()} disabled={transfers.busy}>
+                      Paste
+                    </Button>
+                  )}
                   {selectedIds.length > 0 && (
                     <>
+                      <Button onClick={() => transfers.copySelection('copy')}>Copy</Button>
+                      <Button onClick={() => transfers.copySelection('move')}>Cut</Button>
                       <Button
+                        disabled={!selectedFileIds.length}
                         onClick={() => {
                           setOptions({ ...options, scope: 'files' });
                           setTab('search');
@@ -444,7 +473,8 @@ export function ApplicationWorkspace() {
                       </Button>
                       <Button
                         icon={<ReloadOutlined aria-hidden="true" />}
-                        onClick={() => void indexDocuments(selectedIds)}
+                        disabled={!selectedFileIds.length}
+                        onClick={() => void indexDocuments(selectedFileIds)}
                       >
                         Reindex
                       </Button>
@@ -476,14 +506,12 @@ export function ApplicationWorkspace() {
                 }
                 onAction={handleNodeAction}
                 onUpload={() => fileInput.current?.click()}
+                dragSourceProps={transfers.dragSourceProps}
+                dropTargetProps={transfers.dropTargetProps}
               />
               <div
-                className="drop-zone"
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (!uploading) void uploadFiles(Array.from(event.dataTransfer.files));
-                }}
+                {...transfers.dropTargetProps(folderId)}
+                className={`drop-zone ${transfers.dropTargetProps(folderId).className || ''}`}
               >
                 <CloudUploadOutlined aria-hidden="true" />
                 <span>
@@ -515,7 +543,7 @@ export function ApplicationWorkspace() {
                 options={currentOptions}
                 onChange={setOptions}
                 folderName={folder?.name || 'Library'}
-                selectedCount={selectedIds.length}
+                selectedCount={selectedFileIds.length}
               />
               {tab === 'search' && (
                 <SearchWorkspace
@@ -557,6 +585,7 @@ export function ApplicationWorkspace() {
         hidden
         onChange={(event) => void uploadFiles(Array.from(event.target.files || []))}
       />
+      {transfers.conflictDialog}
       <ModelSettingsDrawer
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}

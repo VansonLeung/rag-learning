@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from 'react';
 import { Button, Dropdown, Empty, Space, Table, Tag, Typography } from 'antd';
 import { FileTextOutlined, FolderFilled, MoreOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ExplorerNode, IndexingJob } from '../../types/applicationTypes';
@@ -17,6 +18,8 @@ interface Props {
   onOpen: (node: ExplorerNode) => void;
   onAction: (action: string, node: ExplorerNode) => void;
   onUpload: () => void;
+  dragSourceProps: (id: string) => HTMLAttributes<HTMLElement>;
+  dropTargetProps: (id: string) => HTMLAttributes<HTMLElement>;
 }
 export function ExplorerFileTable({
   nodes,
@@ -27,6 +30,8 @@ export function ExplorerFileTable({
   onOpen,
   onAction,
   onUpload,
+  dragSourceProps,
+  dropTargetProps,
 }: Props) {
   return (
     <Table<ExplorerNode>
@@ -38,9 +43,12 @@ export function ExplorerFileTable({
       rowSelection={{
         selectedRowKeys: selectedIds,
         onChange: (keys) => onSelect(keys.map(String)),
-        getCheckboxProps: (node) => ({ disabled: node.kind === 'folder' }),
       }}
-      onRow={(node) => ({ onDoubleClick: () => onOpen(node) })}
+      onRow={(node) => ({
+        ...dragSourceProps(node.id),
+        ...(node.kind === 'folder' ? dropTargetProps(node.id) : {}),
+        onDoubleClick: () => onOpen(node),
+      })}
       locale={{
         emptyText: (
           <Empty
@@ -133,6 +141,9 @@ export function ExplorerFileTable({
                 items: [
                   { key: 'rename', label: 'Rename' },
                   { key: 'move', label: 'Move to folder' },
+                  { key: 'copy', label: 'Copy' },
+                  { key: 'cut', label: 'Cut' },
+                  ...(node.kind === 'folder' ? [{ key: 'paste', label: 'Paste into folder' }] : []),
                   ...(node.kind === 'file'
                     ? [
                         { key: 'reindex', label: 'Reindex document' },

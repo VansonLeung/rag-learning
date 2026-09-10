@@ -5,3 +5,6 @@ dist/
 *.log
 test-results/
 playwright-report/
+*.tsbuildinfo
+v1/desktop/app/
+v1/desktop/out/

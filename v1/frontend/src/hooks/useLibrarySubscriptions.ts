@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { requestBackend } from '../api/backendApiClient';
+import { useWorkspaceApi } from '../api/WorkspaceApiProvider';
 import type { ExplorerNode, IndexingJob } from '../types/applicationTypes';
 export function useLibrarySubscriptions(onError: (error: unknown) => void) {
+  const { requestBackend, urlFor } = useWorkspaceApi();
   const [nodes, setNodes] = useState<ExplorerNode[]>([]);
   const [jobs, setJobs] = useState<IndexingJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,11 +19,11 @@ export function useLibrarySubscriptions(onError: (error: unknown) => void) {
     } finally {
       setLoading(false);
     }
-  }, [onError]);
+  }, [onError, requestBackend]);
   useEffect(() => {
     void refresh();
     let timer: ReturnType<typeof setTimeout>;
-    const source = new EventSource('/api/events');
+    const source = new EventSource(urlFor('/events'));
     source.onmessage = () => {
       clearTimeout(timer);
       timer = setTimeout(() => void refresh(), 150);

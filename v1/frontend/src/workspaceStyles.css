@@ -863,3 +863,42 @@ h1 {
     padding: 35px 12px;
   }
 }
+.workspace-switcher {
+  padding: 4px 8px 18px;
+  border-bottom: 1px solid #dfe6d9;
+}
+.workspace-switcher .sidebar-section-label {
+  margin: 0 0 8px;
+}
+.workspace-switcher small {
+  display: block;
+  font-size: 9px;
+  color: #879184;
+  margin-top: 8px;
+}
+.folder-drop-label {
+  display: inline-block;
+  width: 100%;
+  padding: 3px 2px;
+  border-radius: 4px;
+}
+.explorer-drop-target {
+  background: #dcebd3 !important;
+  outline: 2px solid #6e9660;
+  outline-offset: -2px;
+}
+.ant-table-row[draggable='true'] {
+  cursor: grab;
+}
+.ant-table-row[draggable='true']:active {
+  cursor: grabbing;
+}
+@media (max-width: 760px) {
+  .workspace-switcher {
+    padding: 0 0 12px;
+    margin-bottom: 10px;
+  }
+  .workspace-switcher .sidebar-section-label {
+    display: flex;
+  }
+}

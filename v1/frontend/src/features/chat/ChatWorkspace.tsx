@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Collapse, Input, Select, Space, Tag } from 'antd';
 import { ArrowUpOutlined, CommentOutlined, PlusOutlined, StopOutlined } from '@ant-design/icons';
-import { requestBackend, streamBackendEvents } from '../../api/backendApiClient';
+import { useWorkspaceApi } from '../../api/WorkspaceApiProvider';
 import type { RetrievalOptions, RetrievalResult } from '../../types/applicationTypes';
 import type { PreviewTarget } from '../explorer/DocumentPreviewDrawer';
 import { CitedMarkdownAnswer } from './CitedMarkdownAnswer';
@@ -19,6 +19,7 @@ export function ChatWorkspace({
   options: RetrievalOptions;
   onPreview: (target: PreviewTarget) => void;
 }) {
+  const { requestBackend, streamBackendEvents, urlFor } = useWorkspaceApi();
   const [sessions, setSessions] = useState<{ id: string; title: string }[]>([]);
   const [sessionId, setSessionId] = useState<string>();
   const [messages, setMessages] = useState<Message[]>([]);

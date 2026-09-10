@@ -9,7 +9,10 @@ export async function extractDocumentText(buffer: Buffer, filename: string): Pro
   let text: string;
   if (extension === '.docx') text = (await mammoth.extractRawText({ buffer })).value;
   else if (extension === '.pdf') {
-    const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    // Electron utility processes do not receive PDF.js's automatic Node worker path.
+    // Resolve the installed asset explicitly in both source and packaged applications.
+    GlobalWorkerOptions.workerSrc = import.meta.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
     const loadingTask = getDocument({ data: new Uint8Array(buffer), useSystemFonts: true });
     try {
       const document = await loadingTask.promise;

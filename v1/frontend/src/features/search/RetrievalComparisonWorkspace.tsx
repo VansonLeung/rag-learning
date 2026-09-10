@@ -3,7 +3,7 @@ import { Alert, Button, Checkbox, Input, Tag } from 'antd';
 import { ExperimentOutlined } from '@ant-design/icons';
 import type { RetrievalOptions, RetrievalResult } from '../../types/applicationTypes';
 import type { PreviewTarget } from '../explorer/DocumentPreviewDrawer';
-import { postBackend } from '../../api/backendApiClient';
+import { useWorkspaceApi } from '../../api/WorkspaceApiProvider';
 import { RetrievalResults } from './RetrievalResults';
 import { CitedMarkdownAnswer } from '../chat/CitedMarkdownAnswer';
 interface Variant {
@@ -23,6 +23,7 @@ export function RetrievalComparisonWorkspace({
   onChange: (options: RetrievalOptions) => void;
   onPreview: (target: PreviewTarget) => void;
 }) {
+  const { postBackend, urlFor } = useWorkspaceApi();
   const [results, setResults] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(false);
   const [generateAnswers, setGenerateAnswers] = useState(false);

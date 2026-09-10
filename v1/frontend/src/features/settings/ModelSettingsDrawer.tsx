@@ -13,7 +13,7 @@ import {
   App,
 } from 'antd';
 import { ApiOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { requestBackend, postBackend } from '../../api/backendApiClient';
+import { useWorkspaceApi } from '../../api/WorkspaceApiProvider';
 import type { ApplicationSettings } from '../../types/applicationTypes';
 interface Props {
   open: boolean;
@@ -29,6 +29,7 @@ export function ModelSettingsDrawer({
   onReindexAll,
   documentCount,
 }: Props) {
+  const { requestBackend, postBackend, urlFor } = useWorkspaceApi();
   const [form] = Form.useForm();
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);

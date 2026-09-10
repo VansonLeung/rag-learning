@@ -3,7 +3,7 @@ import { Alert, Button, Empty, Input, Space } from 'antd';
 import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import type { RetrievalOptions, RetrievalResult } from '../../types/applicationTypes';
 import type { PreviewTarget } from '../explorer/DocumentPreviewDrawer';
-import { postBackend } from '../../api/backendApiClient';
+import { useWorkspaceApi } from '../../api/WorkspaceApiProvider';
 import { RetrievalResults } from './RetrievalResults';
 interface Props {
   options: RetrievalOptions;
@@ -12,6 +12,7 @@ interface Props {
   onAsk: () => void;
 }
 export function SearchWorkspace({ options, onChange, onPreview, onAsk }: Props) {
+  const { postBackend, urlFor } = useWorkspaceApi();
   const [result, setResult] = useState<RetrievalResult>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

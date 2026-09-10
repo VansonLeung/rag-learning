@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Drawer, Empty, Select, Space, Spin, Tabs, Tag } from 'antd';
 import { DownloadOutlined, FileTextOutlined } from '@ant-design/icons';
-import { requestBackend } from '../../api/backendApiClient';
+import { useWorkspaceApi } from '../../api/WorkspaceApiProvider';
 import type { ExplorerNode } from '../../types/applicationTypes';
 interface Chunk {
   id: string;
@@ -23,6 +23,7 @@ export function DocumentPreviewDrawer({
   target: PreviewTarget | null;
   onClose: () => void;
 }) {
+  const { requestBackend, urlFor } = useWorkspaceApi();
   const [data, setData] = useState<{ node: ExplorerNode; text: string; chunks: Chunk[] }>();
   const [error, setError] = useState('');
   const [kind, setKind] = useState('all');
@@ -70,7 +71,7 @@ export function DocumentPreviewDrawer({
         target && (
           <Button
             icon={<DownloadOutlined aria-hidden="true" />}
-            href={`/api/nodes/${target.documentId}/download`}
+            href={urlFor(`/nodes/${target.documentId}/download`)}
           >
             Original
           </Button>

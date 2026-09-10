@@ -1,6 +1,6 @@
 # Grove — RAG learning explorer
 
-A local, single-user RAG workspace with a file explorer, scoped retrieval, cited chat, and a retrieval comparison lab. Built with Node, Express, PGlite + pgvector, Vite, React, Ant Design, and TypeScript.
+A local, single-user RAG application with isolated workspaces and a file explorer, scoped retrieval, cited chat, and a retrieval comparison lab. Built with Node, Express, PGlite + pgvector, Vite, React, Ant Design, and TypeScript.
 
 ## Run
 
@@ -101,3 +101,47 @@ npm run format:check
 Integration tests use a real temporary PGlite database and local deterministic model fixtures, covering scope isolation, rank fusion, parent expansion, citations, index changes, cancellations, folder operations, and Unicode offsets. Browser tests configure model endpoints, upload a document, search, open citations, compare all modes, and check mobile layout. They use ports 3001 and 3002, so stop your development server first.
 
 Live model quality and provider-specific behavior require your actual endpoints. OCR, filesystem watching, semantic folder-summary traversal, multi-user authorization, and production-scale indexing are outside this local v1.
+
+## Multiple workspaces
+
+Use the **Active workspace** selector in the sidebar. The adjacent **+** creates a workspace; the menu renames or deletes it. Each workspace has a separate PGlite database, originals directory, model configuration, index, job queue, and conversation history. Search and chat always use the selected workspace. The existing library is registered as **Personal** without relocating or rewriting its documents.
+
+Workspace requests use `/api/workspaces/:workspaceId/...`. The React API provider is bound to one immutable workspace ID and remounted on switching, so pending upload batches and chat requests cannot accidentally change libraries. Jobs in an already opened workspace continue after switching. After a backend restart, other workspaces open lazily and resume their queued work when opened. The original `/api/...` endpoints remain aliases for Personal for compatibility.
+
+The registry is `workspaces.json` under the data directory. Personal retains the original `postgres/` and `uploads/` paths; new workspaces use `workspaces/<id>/postgres/` and `workspaces/<id>/uploads/`. Back up the entire data directory with the app stopped. Keep at least one workspace. Deletion removes the selected workspace's data and cancels its indexing jobs; it is rejected while a tracked request/transfer is in progress.
+
+## Copying, moving, and drag-and-drop
+
+- Select files and folders with the table checkboxes. **Copy**, **Cut**, and **Paste** are available in the toolbar and item menus. Use Command/Ctrl+C, X, and V when focus is outside a text field.
+- Drag a file/folder row onto another folder row or a sidebar folder to move it. Hold **Option on macOS** or **Ctrl on Windows/Linux** while dropping to copy. Hover over a sidebar folder to expand it. The drop zone targets the currently open folder.
+- Drop operating-system files or folders to import copies; directory entries are traversed and their relative paths preserved. Source files on your computer are never removed.
+- Copy in one workspace, switch workspaces, and paste to transfer documents between libraries. Cross-workspace moves are deliberately unavailable: copy first, verify, then delete originals if wanted. Cross-workspace dragging copies by default.
+- A name conflict offers **Keep both**, **Skip existing**, or **Replace existing**. Replacement deletes the matching destination item, including its descendants. Copying over a selected source is prohibited. Multi-item moves and destination copy records commit in one transaction. A selection containing both a parent folder and its descendants is normalized to avoid duplicate copies.
+- Compatible copies reuse extracted text and embeddings with new document/chunk IDs. Incompatible or unindexed copies are queued for indexing with the destination workspace's model settings. Moves within one workspace preserve IDs and indexes.
+
+Workspace lifecycle code lives in `v1/backend/src/services/workspaces/`. Transfer logic lives in `services/explorer/transferExplorerNodes.ts`. Frontend clipboard, drag/drop callbacks, and conflict handling live in `features/explorer/`; workspace selection lives in `features/workspaces/`.
+
+## Electron desktop application
+
+The desktop shell is under **`v1/desktop`**. The browser app remains available through the original commands.
+
+```sh
+npm run desktop:dev      # build, prepare, and launch Electron
+npm run desktop:package  # produce an application bundle for this host
+npm run desktop:make     # create installers/archives for this host
+npm run test:desktop     # smoke-test the prepared desktop app
+```
+
+`desktop:prepare` assembles a standalone app under `v1/desktop/app` with the built backend, frontend, and production dependencies pinned to the root lockfile's direct versions. Forge writes output under `v1/desktop/out`. PGlite/pgvector WASM, PDF.js worker files, and optional native assets remain regular files (`asar: false`) so their runtime paths work in the installed application. Generated staging files, installers, and test data are ignored by Git.
+
+The Electron main process starts the backend in an Electron utility process on an automatically assigned loopback port. The desktop session injects a random authentication token into its backend requests; ordinary browser requests to that port are rejected. The renderer has sandboxing and context isolation enabled, with Node integration disabled. The preload bridge exposes a platform query and forwards validated edit-menu commands; unhandled commands retain normal text editing. Window navigation is restricted to the app; external HTTP(S) links open in the system browser. Closing the app shuts down the backend and database. A single-instance lock prevents a second desktop instance from opening the same profile.
+
+Desktop data lives under Electron's user-data directory in `library/` (on macOS, normally `~/Library/Application Support/Grove/library`). **Help → Show library data folder** reveals the actual location. Desktop and browser profiles are separate by default. `RAG_DATA_DIR` can select an existing library, but stop the browser backend before opening that same directory in Electron. `GROVE_USER_DATA_DIR` overrides the Electron profile location, mainly for isolated tests.
+
+Configured maker targets are macOS DMG/ZIP, Windows Squirrel/ZIP, and Linux DEB/RPM/ZIP. Build and test each target on its corresponding OS; generating a macOS artifact does not validate Windows or Linux. The app includes its runtime and embedded database; model servers or hosted model accounts remain external.
+
+Unsigned local builds require no signing credentials. For signed macOS builds, set `GROVE_SIGNING_IDENTITY`. Notarization additionally uses `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID`. These credentials are read from the build environment and are never committed. Signing, notarization, automatic updates, and public publishing are not performed by the local build commands unless the relevant signing environment is provided; automatic updates and publishing are not configured.
+
+The desktop smoke test launches the application with a temporary profile, verifies unauthenticated API requests are rejected, uploads a PDF, indexes/searches it using a local model fixture, and verifies persistence after restart. Set `GROVE_PACKAGED_APP` to a packaged executable to run the same test against the shipped bundle.
+
+Electron Forge currently brings upstream development-tool advisories in `extract-zip` and `image-size`; patched `tar` and `tmp` versions are overridden. These build tools are not included in the desktop's production dependency set. Review `npm audit` before public releases and update Forge as patched dependencies become available.

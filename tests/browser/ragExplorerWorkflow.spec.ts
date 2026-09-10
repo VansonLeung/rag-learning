@@ -71,3 +71,128 @@ test('mobile layout keeps navigation and file actions reachable', async ({ page 
   );
   expect(overflow).toBe(false);
 });
+
+test('switch workspaces, copy across them, and drag files to move or copy', async ({
+  page,
+  request,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const source = (
+    await (await request.post('/api/workspaces', { data: { name: 'Drag source' } })).json()
+  ).id;
+  const target = (
+    await (await request.post('/api/workspaces', { data: { name: 'Drag target' } })).json()
+  ).id;
+  const prefix = `/api/workspaces/${source}`;
+  const first = (
+    await (
+      await request.post(prefix + '/folders', { data: { parentId: 'root', name: 'First' } })
+    ).json()
+  ).id;
+  const second = (
+    await (
+      await request.post(prefix + '/folders', { data: { parentId: 'root', name: 'Second' } })
+    ).json()
+  ).id;
+  await request.post(prefix + '/upload', {
+    multipart: {
+      parentId: 'root',
+      paths: JSON.stringify(['drag.txt']),
+      files: {
+        name: 'drag.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('A document for drag and drop.'),
+      },
+    },
+  });
+  await page.goto('/');
+  await page.getByRole('combobox', { name: 'Active workspace' }).click();
+  await page.getByTitle('Drag source', { exact: true }).click();
+  const row = page
+    .getByRole('row')
+    .filter({ has: page.getByRole('button', { name: 'drag.txt', exact: true }) });
+  const destination = page
+    .getByRole('row')
+    .filter({ has: page.getByRole('button', { name: 'First', exact: true }) });
+  await row.dragTo(destination);
+  await expect(page.getByRole('button', { name: 'drag.txt', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'First', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'drag.txt', exact: true })).toBeVisible();
+  // A modifier drop copies into the sidebar target without removing the original.
+  await page.keyboard.down('Alt');
+  await page
+    .getByRole('row')
+    .filter({ has: page.getByRole('button', { name: 'drag.txt', exact: true }) })
+    .dragTo(page.locator('.folder-drop-label').filter({ hasText: /^Second$/ }));
+  await page.keyboard.up('Alt');
+  await expect(page.getByRole('button', { name: 'drag.txt', exact: true })).toBeVisible();
+  await expect
+    .poll(async () => {
+      const nodes = await (await request.get(prefix + '/nodes')).json();
+      return nodes.filter((node: any) => node.parent_id === second && node.kind === 'file').length;
+    })
+    .toBe(1);
+  await page.getByRole('button', { name: 'Actions for drag.txt' }).click();
+  await page.getByRole('menuitem', { name: 'Copy', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Active workspace' }).click();
+  await page.getByTitle('Drag target', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'drag.txt', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Paste', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'drag.txt', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Paste', exact: true }).click();
+  await expect(page.getByRole('dialog').filter({ hasText: 'Items already exist' })).toBeVisible();
+  await page.getByRole('button', { name: 'Keep both', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'drag (copy).txt', exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('workspace management and keyboard folder copy work through the UI', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+  const create = page.getByRole('dialog', { name: 'Create workspace' });
+  await create.getByRole('textbox', { name: 'Workspace name' }).fill('Interface workspace');
+  await create.getByRole('button', { name: 'Create workspace', exact: true }).click();
+  await expect(
+    page.locator('.workspace-switcher').getByText('Interface workspace', { exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'New folder', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Item name' }).fill('Copy me');
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Create folder', exact: true })
+    .click();
+  await page
+    .getByRole('row')
+    .filter({ has: page.getByRole('button', { name: 'Copy me', exact: true }) })
+    .getByRole('checkbox')
+    .check();
+  await page.keyboard.press('Control+c');
+  await expect(page.getByRole('button', { name: 'Paste', exact: true })).toBeVisible();
+  await page.keyboard.press('Control+v');
+  await page
+    .getByRole('dialog', { name: 'Items already exist' })
+    .getByRole('button', { name: 'Keep both' })
+    .click();
+  await expect(page.getByRole('button', { name: 'Copy me (copy)', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Workspace actions' }).click();
+  await page.getByRole('menuitem', { name: 'Rename workspace' }).click();
+  await page.getByRole('textbox', { name: 'Workspace name' }).fill('Renamed interface workspace');
+  await page
+    .getByRole('dialog', { name: 'Rename workspace' })
+    .getByRole('button', { name: 'Save', exact: true })
+    .click();
+  await expect(
+    page.locator('.workspace-switcher').getByText('Renamed interface workspace', { exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Workspace actions' }).click();
+  await page.getByRole('menuitem', { name: 'Delete workspace' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Delete workspace', exact: true })
+    .click();
+  await expect(
+    page.locator('.workspace-switcher').getByText('Personal', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy me', exact: true })).toHaveCount(0);
+});
