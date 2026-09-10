@@ -1,0 +1,31 @@
+{
+  "name": "rag-explorer-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/startBackendServer.ts",
+    "build": "tsc",
+    "start": "node dist/startBackendServer.js",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "latest",
+    "@electric-sql/pglite-pgvector": "latest",
+    "express": "^5.1.0",
+    "js-tiktoken": "^1.0.21",
+    "mammoth": "^1.10.0",
+    "multer": "^2.0.2",
+    "pdfjs-dist": "^6.3.289",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.0.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

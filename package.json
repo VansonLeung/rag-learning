@@ -1,0 +1,23 @@
+{
+  "name": "rag-learning-explorer",
+  "private": true,
+  "workspaces": [
+    "v1/backend",
+    "v1/frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n backend,frontend \"npm run dev -w v1/backend\" \"npm run dev -w v1/frontend\"",
+    "build": "npm run build -w v1/frontend && npm run build -w v1/backend",
+    "start": "npm run start -w v1/backend",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test -w v1/backend",
+    "test:browser": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^9.2.0",
+    "prettier": "^3.9.6"
+  }
+}
