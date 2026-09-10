@@ -12,7 +12,6 @@ import {
   Select,
   Space,
   Tabs,
-  Tag,
   Tooltip,
   Upload,
 } from 'antd';
@@ -28,7 +27,6 @@ import {
   CommentOutlined,
   ExperimentOutlined,
   ReloadOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useLibrarySubscriptions } from './hooks/useLibrarySubscriptions';
 import { useWorkspaceApi } from './api/WorkspaceApiProvider';
@@ -43,6 +41,7 @@ import { IndexingJobsDrawer } from './features/jobs/IndexingJobsDrawer';
 import { ModelSettingsDrawer } from './features/settings/ModelSettingsDrawer';
 import { RetrievalControls, defaultRetrievalOptions } from './features/search/RetrievalControls';
 import { SearchWorkspace } from './features/search/SearchWorkspace';
+import { ChatRetrievalSettings } from './features/chat/ChatRetrievalSettings';
 import { ChatWorkspace } from './features/chat/ChatWorkspace';
 import { RetrievalComparisonWorkspace } from './features/search/RetrievalComparisonWorkspace';
 export function ApplicationWorkspace({
@@ -354,7 +353,21 @@ export function ApplicationWorkspace({
             }))}
           />
           <Space>
-            <Tag className="version-tag">V1 · RAG WORKSPACE</Tag>
+            <Tooltip
+              title={`${files.length} documents · ${nodes.filter((node) => node.kind === 'folder' && node.id !== 'root').length} folders · ${indexed} ready to search · ${activeJobs.length} indexing jobs`}
+            >
+              <Button
+                type="text"
+                className="index-status-button"
+                aria-label="View library indexing status"
+                onClick={() => setJobsOpen(true)}
+                icon={<DatabaseOutlined aria-hidden="true" />}
+              >
+                {activeJobs.length
+                  ? `${activeJobs.length} indexing`
+                  : `${indexed}/${files.length} ready`}
+              </Button>
+            </Tooltip>
             <Tooltip title="Model connections">
               <Button
                 aria-label="Open model settings"
@@ -365,93 +378,55 @@ export function ApplicationWorkspace({
             </Tooltip>
           </Space>
         </header>
-        <main className="workspace-main">
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">EXPLORE · RETRIEVE · UNDERSTAND</div>
-              <h1>{folderId === 'root' ? 'Your knowledge, within reach.' : folder?.name}</h1>
-              <p>Bring your documents together. Find connections. Follow the evidence.</p>
-            </div>
-            <Space>
-              <Button icon={<FolderAddOutlined aria-hidden="true" />} onClick={openCreateFolder}>
-                New folder
-              </Button>
-              <Button
-                type="primary"
-                icon={<CloudUploadOutlined aria-hidden="true" />}
-                loading={uploading}
-                onClick={() => fileInput.current?.click()}
-              >
-                Upload documents
-              </Button>
-            </Space>
-          </div>
+        <main className={`workspace-main ${tab === 'chat' ? 'workspace-main-chat' : ''}`}>
           {configured === false && (
             <div className="setup-banner">
-              <div className="setup-icon">
-                <ThunderboltOutlined aria-hidden="true" />
-              </div>
-              <div>
-                <strong>Connect a model to bring your library to life</strong>
-                <p>
-                  Add an embedding endpoint to index documents, then connect a language model for
-                  cited answers.
-                </p>
-              </div>
+              <ThunderboltOutlined aria-hidden="true" />
+              <span>Connect an embedding model to index and search documents.</span>
               <Button onClick={() => setSettingsOpen(true)}>Set up models →</Button>
             </div>
           )}
-          <div className="stat-grid">
-            <div>
-              <span className="stat-icon">
-                <BookOutlined aria-hidden="true" />
-              </span>
-              <div>
-                <strong>{files.length}</strong>
-                <span>Documents</span>
-              </div>
-            </div>
-            <div>
-              <span className="stat-icon">
-                <FolderOpenOutlined aria-hidden="true" />
-              </span>
-              <div>
-                <strong>
-                  {nodes.filter((node) => node.kind === 'folder' && node.id !== 'root').length}
-                </strong>
-                <span>Folders</span>
-              </div>
-            </div>
-            <div>
-              <span className="stat-icon">
-                <CheckCircleOutlined aria-hidden="true" />
-              </span>
-              <div>
-                <strong>{indexed}</strong>
-                <span>Ready to search</span>
-              </div>
-            </div>
-            <div>
-              <span className="stat-icon">
-                <ThunderboltOutlined aria-hidden="true" />
-              </span>
-              <div>
-                <strong>{activeJobs.length}</strong>
-                <span>Indexing jobs</span>
-              </div>
-            </div>
-          </div>
           <Tabs className="workspace-tabs" activeKey={tab} onChange={setTab} items={tabItems} />
           {tab === 'explorer' ? (
             <>
               <div className="explorer-toolbar">
                 <div>
-                  <h3>{folderId === 'root' ? 'All files & folders' : folder?.name}</h3>
+                  <h1>{folderId === 'root' ? 'All files & folders' : folder?.name}</h1>
                   <span className="muted">
                     {children.length} items in this folder
                     {selectedIds.length ? ` · ${selectedIds.length} selected` : ''}
                   </span>
                 </div>
+                <Space wrap className="explorer-file-actions">
+                  <Button
+                    icon={<FolderAddOutlined aria-hidden="true" />}
+                    onClick={openCreateFolder}
+                  >
+                    New folder
+                  </Button>
+                  <Button onClick={() => folderInput.current?.click()} disabled={uploading}>
+                    Upload folder
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<CloudUploadOutlined aria-hidden="true" />}
+                    loading={uploading}
+                    onClick={() => fileInput.current?.click()}
+                  >
+                    Upload documents
+                  </Button>
+                </Space>
+              </div>
+              <div className="explorer-filter-toolbar">
+                <Input
+                  prefix={<SearchOutlined aria-hidden="true" />}
+                  placeholder="Filter filenames…"
+                  aria-label="Filter filenames"
+                  value={filenameFilter}
+                  allowClear
+                  onChange={(event) => setFilenameFilter(event.target.value)}
+                  className="filename-filter"
+                />
                 <Space wrap>
                   {transfers.clipboard && (
                     <Button onClick={() => transfers.pasteIntoFolder()} disabled={transfers.busy}>
@@ -480,17 +455,6 @@ export function ApplicationWorkspace({
                       </Button>
                     </>
                   )}
-                  <Input
-                    prefix={<SearchOutlined aria-hidden="true" />}
-                    placeholder="Filter filenames…"
-                    aria-label="Filter filenames"
-                    value={filenameFilter}
-                    onChange={(event) => setFilenameFilter(event.target.value)}
-                    style={{ width: 210 }}
-                  />
-                  <Button onClick={() => folderInput.current?.click()} disabled={uploading}>
-                    Upload folder
-                  </Button>
                 </Space>
               </div>
               <ExplorerFileTable
@@ -517,7 +481,7 @@ export function ApplicationWorkspace({
                 <span>
                   {uploading
                     ? 'Uploading your documents…'
-                    : 'Drop files here, or use Upload folder to preserve your folder structure'}
+                    : 'Drop files here · Upload folder preserves folder structure'}
                 </span>
                 <small>TXT, Markdown, PDF, DOCX · up to 25 MB per file</small>
               </div>
@@ -539,12 +503,21 @@ export function ApplicationWorkspace({
             </>
           ) : (
             <>
-              <RetrievalControls
-                options={currentOptions}
-                onChange={setOptions}
-                folderName={folder?.name || 'Library'}
-                selectedCount={selectedFileIds.length}
-              />
+              {tab === 'chat' ? (
+                <ChatRetrievalSettings
+                  options={currentOptions}
+                  onChange={setOptions}
+                  folderName={folder?.name || 'Library'}
+                  selectedCount={selectedFileIds.length}
+                />
+              ) : (
+                <RetrievalControls
+                  options={currentOptions}
+                  onChange={setOptions}
+                  folderName={folder?.name || 'Library'}
+                  selectedCount={selectedFileIds.length}
+                />
+              )}
               {tab === 'search' && (
                 <SearchWorkspace
                   options={currentOptions}
@@ -563,10 +536,6 @@ export function ApplicationWorkspace({
               )}
             </>
           )}
-          <footer className="workspace-footer">
-            <span>Built for curious minds.</span>
-            <span>Every answer starts with a source.</span>
-          </footer>
         </main>
       </div>
       <input

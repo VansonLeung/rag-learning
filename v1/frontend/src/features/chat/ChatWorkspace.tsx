@@ -27,7 +27,8 @@ export function ChatWorkspace({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null);
-  const end = useRef<HTMLDivElement>(null);
+  const messageList = useRef<HTMLDivElement>(null);
+  const followLatestMessage = useRef(true);
   const refreshSessions = () =>
     requestBackend<typeof sessions>('/chat/sessions')
       .then(setSessions)
@@ -37,7 +38,8 @@ export function ChatWorkspace({
     return () => controller.current?.abort();
   }, []);
   useEffect(() => {
-    end.current?.scrollIntoView({ block: 'nearest' });
+    const container = messageList.current;
+    if (container && followLatestMessage.current) container.scrollTop = container.scrollHeight;
   }, [messages]);
   async function loadSession(id: string) {
     setError('');
@@ -45,6 +47,7 @@ export function ChatWorkspace({
     try {
       const saved = await requestBackend<Message[]>(`/chat/sessions/${id}`);
       setSessionId(id);
+      followLatestMessage.current = true;
       setMessages(saved);
     } catch (error) {
       setError((error as Error).message);
@@ -55,6 +58,7 @@ export function ChatWorkspace({
   async function askQuestion() {
     if (!question.trim() || loading) return;
     const query = question.trim();
+    followLatestMessage.current = true;
     setQuestion('');
     setError('');
     setLoading(true);
@@ -133,7 +137,15 @@ export function ChatWorkspace({
           New chat
         </Button>
       </div>
-      <div className="chat-messages">
+      <div
+        className="chat-messages"
+        ref={messageList}
+        onScroll={(event) => {
+          const container = event.currentTarget;
+          followLatestMessage.current =
+            container.scrollHeight - container.scrollTop - container.clientHeight < 64;
+        }}
+      >
         {!messages.length && (
           <div className="workspace-empty">
             <div className="empty-icon">
@@ -190,7 +202,6 @@ export function ChatWorkspace({
             )}
           </article>
         ))}
-        <div ref={end} />
       </div>
       {error && <Alert type="error" showIcon title={error} closable onClose={() => setError('')} />}
       <div className="chat-composer">

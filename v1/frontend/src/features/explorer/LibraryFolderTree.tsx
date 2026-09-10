@@ -39,6 +39,7 @@ export function LibraryFolderTree({
           target.onDragLeave?.(event);
         }}
         className={`folder-drop-label ${target.className || ''}`}
+        title={name}
       >
         {name}
       </span>

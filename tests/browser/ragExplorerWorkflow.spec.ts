@@ -3,8 +3,10 @@ test('configure models, upload, retrieve, cite sources, and compare modes', asyn
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Your knowledge, within reach.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'All files & folders' })).toBeVisible();
   await expect(page.locator('.ant-spin-spinning')).toHaveCount(0);
+  const fileTable = await page.locator('.file-table').boundingBox();
+  expect(fileTable!.y).toBeLessThan(300);
   await page.screenshot({ path: 'test-results/empty-library.png', fullPage: true });
   await page.getByRole('button', { name: 'Set up models' }).click();
   const drawer = page.getByRole('dialog').filter({ hasText: 'Model connections' });
@@ -46,9 +48,18 @@ test('configure models, upload, retrieve, cite sources, and compare modes', asyn
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/search-evidence.png', fullPage: true });
   await page.getByRole('tab', { name: 'Ask your library', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Ask Grove', exact: true })).toBeInViewport();
+  await page.getByRole('button', { name: 'Retrieval settings', exact: true }).click();
+  const retrievalDrawer = page.getByRole('dialog', { name: 'Chat retrieval settings' });
+  await retrievalDrawer.getByText('Vector', { exact: true }).click();
+  await expect(retrievalDrawer.getByRole('radio', { name: 'Vector', exact: true })).toBeChecked();
+  await retrievalDrawer.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.locator('.chat-retrieval-summary')).toContainText('Vector');
   await page.getByRole('textbox', { name: 'Ask your documents' }).fill('What do apple trees need?');
   await page.getByRole('button', { name: 'Ask Grove', exact: true }).click();
   await expect(page.locator('.citation-link').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ask Grove', exact: true })).toBeInViewport();
+  await page.screenshot({ path: 'test-results/chat-workspace.png', fullPage: true });
   await page.locator('.citation-link').first().click();
   await expect(page.locator('#source-passage')).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
@@ -63,7 +74,7 @@ test('configure models, upload, retrieve, cite sources, and compare modes', asyn
 test('mobile layout keeps navigation and file actions reachable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Your knowledge, within reach.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'All files & folders' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Upload documents', exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/mobile-library.png', fullPage: true });
   const overflow = await page.evaluate(
