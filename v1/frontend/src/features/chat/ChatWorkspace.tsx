@@ -148,18 +148,7 @@ export function ChatWorkspace({
       >
         {!messages.length && (
           <div className="workspace-empty">
-            <div className="empty-icon">
-              <CommentOutlined aria-hidden="true" />
-            </div>
-            <h2>A conversation with your library</h2>
-            <p>
-              Ask a question and follow the citations back to your documents.
-              <br />
-              The current search scope applies to every new question.
-            </p>
-            <p className="muted">
-              Use explicit subjects in follow-up questions for the best retrieval.
-            </p>
+            <p>Ask a question about your documents.</p>
           </div>
         )}
         {messages.map((message, index) => (

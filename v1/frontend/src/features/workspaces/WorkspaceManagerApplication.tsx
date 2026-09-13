@@ -118,7 +118,6 @@ export function WorkspaceManagerApplication() {
           <Button aria-label="Workspace actions" icon={<MoreOutlined aria-hidden />} />
         </Dropdown>
       </Space.Compact>
-      <small>Separate documents, models, and conversations</small>
     </div>
   );
   if (error)

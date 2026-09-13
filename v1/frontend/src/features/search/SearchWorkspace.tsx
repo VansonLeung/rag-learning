@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Empty, Input, Space } from 'antd';
+import { Alert, Button, Input } from 'antd';
 import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import type { RetrievalOptions, RetrievalResult } from '../../types/applicationTypes';
 import type { PreviewTarget } from '../explorer/DocumentPreviewDrawer';
@@ -34,7 +34,7 @@ export function SearchWorkspace({ options, onChange, onPreview, onAsk }: Props) 
         <SearchOutlined aria-hidden="true" />
         <Input
           aria-label="Search documents"
-          placeholder="Find an idea, a passage, or an exact detail…"
+          placeholder="Search documents…"
           value={options.query}
           onChange={(event) => onChange({ ...options, query: event.target.value })}
           onPressEnter={() => void search()}
@@ -65,20 +65,7 @@ export function SearchWorkspace({ options, onChange, onPreview, onAsk }: Props) 
         </>
       ) : (
         <div className="workspace-empty">
-          <div className="empty-icon">
-            <SearchOutlined aria-hidden="true" />
-          </div>
-          <h2>Find the passage that matters</h2>
-          <p>
-            Search your library by meaning, keywords, or both.
-            <br />
-            Inspect every match and see exactly what the model receives.
-          </p>
-          <Space wrap>
-            <span className="hint-pill">Scope by folder</span>
-            <span className="hint-pill">Compare retrieval modes</span>
-            <span className="hint-pill">Trace every source</span>
-          </Space>
+          <p>Enter a query to search documents.</p>
         </div>
       )}
     </>

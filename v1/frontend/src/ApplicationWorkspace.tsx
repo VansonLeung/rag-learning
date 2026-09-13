@@ -8,12 +8,10 @@ import {
   Button,
   Input,
   Modal,
-  Progress,
   Select,
   Space,
   Tabs,
   Tooltip,
-  Upload,
 } from 'antd';
 import {
   BookOutlined,
@@ -276,14 +274,6 @@ export function ApplicationWorkspace({
   return (
     <div className="application-shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Grove home">
-          <span className="brand-icon">
-            <BookOutlined aria-hidden="true" />
-          </span>
-          <span>
-            grove<span className="brand-subtitle">YOUR KNOWLEDGE, CONNECTED</span>
-          </span>
-        </a>
         {workspaceSwitcher}
         <LibraryFolderTree
           nodes={nodes}
@@ -294,26 +284,6 @@ export function ApplicationWorkspace({
           dropTargetProps={transfers.dropTargetProps}
         />
         <div className="sidebar-bottom">
-          <div className="library-health">
-            <div className="flex-between">
-              <span>
-                <DatabaseOutlined aria-hidden="true" /> Library index
-              </span>
-              <strong>
-                {indexed}/{files.length}
-              </strong>
-            </div>
-            <Progress
-              percent={files.length ? Math.round((indexed / files.length) * 100) : 0}
-              showInfo={false}
-              strokeColor="#477c62"
-            />
-            <span className="muted">
-              {files.length
-                ? `${indexed} documents ready to explore`
-                : 'Add documents to grow your library'}
-            </span>
-          </div>
           <Button
             type="text"
             block
@@ -330,9 +300,6 @@ export function ApplicationWorkspace({
           >
             Indexing activity <Badge count={activeJobs.length} color="#477c62" />
           </Button>
-          <div className="local-status">
-            <span className="online-dot" /> PGlite + pgvector · on this device
-          </div>
         </div>
       </aside>
       <div className="main-shell">
@@ -378,164 +345,167 @@ export function ApplicationWorkspace({
             </Tooltip>
           </Space>
         </header>
-        <main className={`workspace-main ${tab === 'chat' ? 'workspace-main-chat' : ''}`}>
+        <main className="workspace-main">
           {configured === false && (
             <div className="setup-banner">
               <ThunderboltOutlined aria-hidden="true" />
-              <span>Connect an embedding model to index and search documents.</span>
-              <Button onClick={() => setSettingsOpen(true)}>Set up models →</Button>
+              <span>Connect an embedding model to index and search.</span>
+              <Button onClick={() => setSettingsOpen(true)}>Set up models</Button>
             </div>
           )}
           <Tabs className="workspace-tabs" activeKey={tab} onChange={setTab} items={tabItems} />
-          {tab === 'explorer' ? (
-            <>
-              <div className="explorer-toolbar">
-                <div>
-                  <h1>{folderId === 'root' ? 'All files & folders' : folder?.name}</h1>
-                  <span className="muted">
-                    {children.length} items in this folder
-                    {selectedIds.length ? ` · ${selectedIds.length} selected` : ''}
-                  </span>
-                </div>
-                <Space wrap className="explorer-file-actions">
-                  <Button
-                    icon={<FolderAddOutlined aria-hidden="true" />}
-                    onClick={openCreateFolder}
-                  >
-                    New folder
-                  </Button>
-                  <Button onClick={() => folderInput.current?.click()} disabled={uploading}>
-                    Upload folder
-                  </Button>
-                  <Button
-                    type="primary"
-                    icon={<CloudUploadOutlined aria-hidden="true" />}
-                    loading={uploading}
-                    onClick={() => fileInput.current?.click()}
-                  >
-                    Upload documents
-                  </Button>
-                </Space>
-              </div>
-              <div className="explorer-filter-toolbar">
-                <Input
-                  prefix={<SearchOutlined aria-hidden="true" />}
-                  placeholder="Filter filenames…"
-                  aria-label="Filter filenames"
-                  value={filenameFilter}
-                  allowClear
-                  onChange={(event) => setFilenameFilter(event.target.value)}
-                  className="filename-filter"
-                />
-                <Space wrap>
-                  {transfers.clipboard && (
-                    <Button onClick={() => transfers.pasteIntoFolder()} disabled={transfers.busy}>
-                      Paste
+          <div className={`workspace-content ${tab === 'chat' ? 'workspace-content-chat' : ''}`}>
+            {tab === 'explorer' ? (
+              <>
+                <div className="explorer-toolbar">
+                  <div>
+                    <h1>{folderId === 'root' ? 'All files & folders' : folder?.name}</h1>
+                    <span className="muted">
+                      {children.length} items in this folder
+                      {selectedIds.length ? ` · ${selectedIds.length} selected` : ''}
+                    </span>
+                  </div>
+                  <Space wrap className="explorer-file-actions">
+                    <Button
+                      icon={<FolderAddOutlined aria-hidden="true" />}
+                      onClick={openCreateFolder}
+                    >
+                      New folder
                     </Button>
-                  )}
-                  {selectedIds.length > 0 && (
-                    <>
-                      <Button onClick={() => transfers.copySelection('copy')}>Copy</Button>
-                      <Button onClick={() => transfers.copySelection('move')}>Cut</Button>
-                      <Button
-                        disabled={!selectedFileIds.length}
-                        onClick={() => {
-                          setOptions({ ...options, scope: 'files' });
-                          setTab('search');
-                        }}
-                      >
-                        Search selected
+                    <Button onClick={() => folderInput.current?.click()} disabled={uploading}>
+                      Upload folder
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<CloudUploadOutlined aria-hidden="true" />}
+                      loading={uploading}
+                      onClick={() => fileInput.current?.click()}
+                    >
+                      Upload documents
+                    </Button>
+                  </Space>
+                </div>
+                <div className="explorer-filter-toolbar">
+                  <Input
+                    prefix={<SearchOutlined aria-hidden="true" />}
+                    placeholder="Filter filenames…"
+                    aria-label="Filter filenames"
+                    value={filenameFilter}
+                    allowClear
+                    onChange={(event) => setFilenameFilter(event.target.value)}
+                    className="filename-filter"
+                  />
+                  <Space wrap>
+                    {transfers.clipboard && (
+                      <Button onClick={() => transfers.pasteIntoFolder()} disabled={transfers.busy}>
+                        Paste
                       </Button>
-                      <Button
-                        icon={<ReloadOutlined aria-hidden="true" />}
-                        disabled={!selectedFileIds.length}
-                        onClick={() => void indexDocuments(selectedFileIds)}
-                      >
-                        Reindex
-                      </Button>
-                    </>
-                  )}
-                </Space>
-              </div>
-              <ExplorerFileTable
-                nodes={children}
-                jobs={jobs}
-                selectedIds={selectedIds}
-                loading={loading}
-                onSelect={setSelectedIds}
-                onOpen={(node) =>
-                  node.kind === 'folder'
-                    ? selectFolder(node.id)
-                    : setPreview({ documentId: node.id })
-                }
-                onAction={handleNodeAction}
-                onUpload={() => fileInput.current?.click()}
-                dragSourceProps={transfers.dragSourceProps}
-                dropTargetProps={transfers.dropTargetProps}
-              />
-              <div
-                {...transfers.dropTargetProps(folderId)}
-                className={`drop-zone ${transfers.dropTargetProps(folderId).className || ''}`}
-              >
-                <CloudUploadOutlined aria-hidden="true" />
-                <span>
-                  {uploading
-                    ? 'Uploading your documents…'
-                    : 'Drop files here · Upload folder preserves folder structure'}
-                </span>
-                <small>TXT, Markdown, PDF, DOCX · up to 25 MB per file</small>
-              </div>
-              {uploadFailures.length > 0 && (
-                <Alert
-                  type="warning"
-                  showIcon
-                  title={`${uploadFailures.length} file(s) could not be uploaded`}
-                  description={
-                    <ul>
-                      {uploadFailures.map((failure, index) => (
-                        <li key={index}>{failure}</li>
-                      ))}
-                    </ul>
+                    )}
+                    {selectedIds.length > 0 && (
+                      <>
+                        <Button onClick={() => transfers.copySelection('copy')}>Copy</Button>
+                        <Button onClick={() => transfers.copySelection('move')}>Cut</Button>
+                        <Button
+                          disabled={!selectedFileIds.length}
+                          onClick={() => {
+                            setOptions({ ...options, scope: 'files' });
+                            setTab('search');
+                          }}
+                        >
+                          Search selected
+                        </Button>
+                        <Button
+                          icon={<ReloadOutlined aria-hidden="true" />}
+                          disabled={!selectedFileIds.length}
+                          onClick={() => void indexDocuments(selectedFileIds)}
+                        >
+                          Reindex
+                        </Button>
+                      </>
+                    )}
+                  </Space>
+                </div>
+                <ExplorerFileTable
+                  nodes={children}
+                  jobs={jobs}
+                  selectedIds={selectedIds}
+                  loading={loading}
+                  onSelect={setSelectedIds}
+                  onOpen={(node) =>
+                    node.kind === 'folder'
+                      ? selectFolder(node.id)
+                      : setPreview({ documentId: node.id })
                   }
-                  closable
+                  onAction={handleNodeAction}
+                  onUpload={() => fileInput.current?.click()}
+                  onNavigateParent={
+                    folder?.parent_id ? () => selectFolder(folder.parent_id!) : undefined
+                  }
+                  dragSourceProps={transfers.dragSourceProps}
+                  dropTargetProps={transfers.dropTargetProps}
                 />
-              )}
-            </>
-          ) : (
-            <>
-              {tab === 'chat' ? (
-                <ChatRetrievalSettings
-                  options={currentOptions}
-                  onChange={setOptions}
-                  folderName={folder?.name || 'Library'}
-                  selectedCount={selectedFileIds.length}
-                />
-              ) : (
-                <RetrievalControls
-                  options={currentOptions}
-                  onChange={setOptions}
-                  folderName={folder?.name || 'Library'}
-                  selectedCount={selectedFileIds.length}
-                />
-              )}
-              {tab === 'search' && (
-                <SearchWorkspace
-                  options={currentOptions}
-                  onChange={setOptions}
-                  onPreview={setPreview}
-                  onAsk={() => setTab('chat')}
-                />
-              )}
-              {tab === 'chat' && <ChatWorkspace options={currentOptions} onPreview={setPreview} />}{' '}
-              {tab === 'compare' && (
-                <RetrievalComparisonWorkspace
-                  options={currentOptions}
-                  onChange={setOptions}
-                  onPreview={setPreview}
-                />
-              )}
-            </>
-          )}
+                <div
+                  {...transfers.dropTargetProps(folderId)}
+                  className={`drop-zone ${transfers.dropTargetProps(folderId).className || ''}`}
+                >
+                  <CloudUploadOutlined aria-hidden="true" />
+                  <span>{uploading ? 'Uploading…' : 'Drop files here or upload a folder'}</span>
+                  <small>TXT, Markdown, PDF, DOCX · up to 25 MB per file</small>
+                </div>
+                {uploadFailures.length > 0 && (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    title={`${uploadFailures.length} file(s) could not be uploaded`}
+                    description={
+                      <ul>
+                        {uploadFailures.map((failure, index) => (
+                          <li key={index}>{failure}</li>
+                        ))}
+                      </ul>
+                    }
+                    closable
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                {tab === 'chat' ? (
+                  <ChatRetrievalSettings
+                    options={currentOptions}
+                    onChange={setOptions}
+                    folderName={folder?.name || 'Library'}
+                    selectedCount={selectedFileIds.length}
+                  />
+                ) : (
+                  <RetrievalControls
+                    options={currentOptions}
+                    onChange={setOptions}
+                    folderName={folder?.name || 'Library'}
+                    selectedCount={selectedFileIds.length}
+                  />
+                )}
+                {tab === 'search' && (
+                  <SearchWorkspace
+                    options={currentOptions}
+                    onChange={setOptions}
+                    onPreview={setPreview}
+                    onAsk={() => setTab('chat')}
+                  />
+                )}
+                {tab === 'chat' && (
+                  <ChatWorkspace options={currentOptions} onPreview={setPreview} />
+                )}{' '}
+                {tab === 'compare' && (
+                  <RetrievalComparisonWorkspace
+                    options={currentOptions}
+                    onChange={setOptions}
+                    onPreview={setPreview}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </main>
       </div>
       <input

@@ -16,7 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           borderRadius: 8,
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
           fontSize: 13,
-          controlHeight: 36,
+          controlHeight: 32,
         },
         components: {
           Button: { primaryShadow: 'none' },
@@ -24,7 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             headerBg: '#fafbf8',
             headerColor: '#7d887e',
             rowHoverBg: '#f4f7f0',
-            cellPaddingBlock: 18,
+            cellPaddingBlock: 10,
           },
           Tabs: { horizontalItemGutter: 28 },
           Tree: { nodeSelectedBg: '#dfeadd', nodeHoverBg: '#edf1e8' },

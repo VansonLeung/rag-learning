@@ -5,7 +5,7 @@ export const defaultRetrievalOptions: RetrievalOptions = {
   query: '',
   method: 'hybrid',
   strategy: 'parent-child',
-  scope: 'all',
+  scope: 'subtree',
   folderId: 'root',
   fileIds: [],
   rerank: false,

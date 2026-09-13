@@ -53,7 +53,7 @@ export function RetrievalComparisonWorkspace({
           value={options.query}
           onChange={(event) => onChange({ ...options, query: event.target.value })}
           onPressEnter={() => void compare()}
-          placeholder="One question. Four ways to retrieve the answer."
+          placeholder="Enter a query to compare retrieval modes…"
         />
         <Button
           type="primary"
@@ -72,8 +72,8 @@ export function RetrievalComparisonWorkspace({
           Generate an answer for each mode
         </Checkbox>
         <p className="muted">
-          Uses the same scope, reranker, counts, and context budget. Runs vector / hybrid × normal /
-          parent-child sequentially. Enabling answers makes four LLM calls.
+          Compares vector and hybrid search with normal and parent-child context. Generating answers
+          uses four model calls.
         </p>
       </div>
       {error && <Alert type="error" title={error} />}
@@ -110,15 +110,7 @@ export function RetrievalComparisonWorkspace({
       </div>
       {!results.length && (
         <div className="workspace-empty">
-          <div className="empty-icon">
-            <ExperimentOutlined aria-hidden="true" />
-          </div>
-          <h2>See what changes the answer</h2>
-          <p>
-            Compare the evidence, context, and speed of every retrieval mode.
-            <br />
-            Turn on answers to evaluate the complete RAG pipeline.
-          </p>
+          <p>Enter a query to compare retrieval modes.</p>
         </div>
       )}
     </>
