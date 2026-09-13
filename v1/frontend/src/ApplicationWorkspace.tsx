@@ -42,6 +42,7 @@ import { SearchWorkspace } from './features/search/SearchWorkspace';
 import { ChatRetrievalSettings } from './features/chat/ChatRetrievalSettings';
 import { ChatWorkspace } from './features/chat/ChatWorkspace';
 import { RetrievalComparisonWorkspace } from './features/search/RetrievalComparisonWorkspace';
+import { LearningDrawer } from './features/learning/LearningDrawer';
 export function ApplicationWorkspace({
   workspaceId,
   workspaceSwitcher,
@@ -63,6 +64,7 @@ export function ApplicationWorkspace({
   const [tab, setTab] = useState('explorer');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [jobsOpen, setJobsOpen] = useState(false);
+  const [learningOpen, setLearningOpen] = useState(false);
   const [preview, setPreview] = useState<PreviewTarget | null>(null);
   const [options, setOptions] = useState(defaultRetrievalOptions);
   const [filenameFilter, setFilenameFilter] = useState('');
@@ -320,6 +322,9 @@ export function ApplicationWorkspace({
             }))}
           />
           <Space>
+            <Button type="text" onClick={() => setLearningOpen(true)}>
+              Practice
+            </Button>
             <Tooltip
               title={`${files.length} documents · ${nodes.filter((node) => node.kind === 'folder' && node.id !== 'root').length} folders · ${indexed} ready to search · ${activeJobs.length} indexing jobs`}
             >
@@ -535,6 +540,7 @@ export function ApplicationWorkspace({
         onReindexAll={() => void indexDocuments(files.map((file) => file.id))}
         documentCount={files.length}
       />
+      <LearningDrawer open={learningOpen} onClose={() => setLearningOpen(false)} />
       <DocumentPreviewDrawer target={preview} onClose={() => setPreview(null)} />
       <IndexingJobsDrawer
         open={jobsOpen}

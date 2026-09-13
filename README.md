@@ -110,6 +110,18 @@ Workspace requests use `/api/workspaces/:workspaceId/...`. The React API provide
 
 The registry is `workspaces.json` under the data directory. Personal retains the original `postgres/` and `uploads/` paths; new workspaces use `workspaces/<id>/postgres/` and `workspaces/<id>/uploads/`. Back up the entire data directory with the app stopped. Keep at least one workspace. Deletion removes the selected workspace's data and cancels its indexing jobs; it is rejected while a tracked request/transfer is in progress.
 
+## Maths practice pilot
+
+Open **Practice** in the top bar from Explorer, Search, or chat. The drawer can expand to the full window and works without any model connection. **New set** creates an original four-graph matching exercise from a fixed template covering lines, quadratics, absolute-value functions, and reciprocals. Each graph has a keyboard-accessible coordinate slider; the graph window and mathematical domain are stated separately.
+
+Choose each equation once. Answers save after each selection, and reopening the drawer or restarting the app restores the set. **Check answers** records an immutable attempt with a score and explanations; use **New set** for another attempt. The selector shows the latest 50 sets in the current workspace. Practice is built-in material, independent of the selected document folder and RAG search scope.
+
+**Linked resources** contains four curated Hanlun references, searchable by title, description, or curriculum code. The CP02 mappings are provisional. Links open the original site; Grove does not crawl its lessons, reproduce its activities, or load its scripts. Reference metadata and exercise answer keys are kept outside the document retrieval index.
+
+The pilot uses a versioned exercise definition and one native `function_graph_matching` view. It does not yet implement user-defined schemas/views, general subject-package import/export, or unrestricted model-generated exercises. Browser and desktop data remain in their respective workspace databases; ordinary full data-directory backups include practice attempts.
+
+Implementation lives in `v1/backend/src/services/learning/`, `routes/registerLearningRoutes.ts`, and `v1/frontend/src/features/learning/`. Validation covers graph discontinuities, draft conflicts, answer-key separation, marking, workspace isolation, restart persistence, and desktop/mobile browser interactions.
+
 ## Copying, moving, and drag-and-drop
 
 - Select files and folders with the table checkboxes. **Copy**, **Cut**, and **Paste** are available in the toolbar and item menus. Use Command/Ctrl+C, X, and V when focus is outside a text field.

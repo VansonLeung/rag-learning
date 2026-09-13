@@ -1,0 +1,426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:qwenwork:hk-math-rag:chunk-schema:v1",
+  "title": "Hong Kong Mathematics RAG Chunk",
+  "description": "香港現行小一至中六數學、M1、M2 知識片段的標準資料格式。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "chunk_id",
+    "curriculum",
+    "levels",
+    "module",
+    "strand",
+    "topic",
+    "content_type",
+    "language",
+    "content",
+    "source",
+    "rights"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "原始文件或知識項目的穩定 ID。"
+    },
+    "chunk_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "檢索片段的唯一 ID。"
+    },
+    "parent_chunk_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "父片段 ID，用於階層檢索。"
+    },
+    "curriculum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system",
+        "status",
+        "key_stage"
+      ],
+      "properties": {
+        "system": {
+          "const": "Hong Kong Mathematics Curriculum"
+        },
+        "status": {
+          "enum": [
+            "current",
+            "superseded",
+            "draft"
+          ]
+        },
+        "key_stage": {
+          "enum": [
+            "KS1",
+            "KS2",
+            "KS3",
+            "KS4"
+          ]
+        },
+        "effective_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "effective_to": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        }
+      }
+    },
+    "levels": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6"
+        ]
+      }
+    },
+    "module": {
+      "enum": [
+        "Primary Mathematics",
+        "Junior Secondary Mathematics",
+        "Compulsory Part",
+        "M1 Calculus and Statistics",
+        "M2 Algebra and Calculus"
+      ]
+    },
+    "strand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "zh_hant",
+        "en"
+      ],
+      "properties": {
+        "zh_hant": {
+          "type": "string"
+        },
+        "en": {
+          "type": "string"
+        }
+      }
+    },
+    "unit_code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "topic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "zh_hant",
+        "en"
+      ],
+      "properties": {
+        "zh_hant": {
+          "type": "string"
+        },
+        "en": {
+          "type": "string"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "subtopic": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "content_type": {
+      "enum": [
+        "curriculum_objective",
+        "concept",
+        "definition",
+        "formula",
+        "theorem",
+        "proof",
+        "worked_example",
+        "exercise",
+        "solution",
+        "marking_scheme",
+        "common_error",
+        "diagnostic_hint",
+        "summary",
+        "glossary"
+      ]
+    },
+    "difficulty": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 5
+    },
+    "curriculum_tier": {
+      "enum": [
+        "core",
+        "non_foundation",
+        "enrichment",
+        "further_learning",
+        "not_applicable"
+      ]
+    },
+    "language": {
+      "enum": [
+        "zh-Hant-HK",
+        "en-HK",
+        "bilingual"
+      ]
+    },
+    "learning_objectives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "prerequisite_unit_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Markdown；數式以 LaTeX 表示。"
+    },
+    "math": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "latex_equations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "solution_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "final_answer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "answer_check": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "common_errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "title",
+        "publisher",
+        "url"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "publisher": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_hash_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "attribution_required"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "original",
+            "licensed",
+            "permission_granted",
+            "official_publication_check_notice",
+            "unknown"
+          ]
+        },
+        "permitted_use": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attribution_required": {
+          "type": "boolean"
+        },
+        "licence_or_notice": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "review_status": {
+          "enum": [
+            "unreviewed",
+            "machine_checked",
+            "teacher_reviewed",
+            "approved"
+          ]
+        },
+        "reviewer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mathematical_correctness": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "curriculum_alignment": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "retrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "chunk_strategy": {
+          "enum": [
+            "semantic",
+            "worked_example_atomic",
+            "question_solution_pair",
+            "curriculum_objective_atomic"
+          ]
+        },
+        "embedding_text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "boost_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

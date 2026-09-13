@@ -656,6 +656,146 @@ h1 {
 .file-table table {
   min-width: 680px;
 }
+.learning-drawer .ant-drawer-body {
+  padding: 12px 16px;
+}
+.practice-toolbar,
+.practice-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.practice-toolbar .ant-select {
+  flex: 1;
+  min-width: 180px;
+  max-width: 390px;
+}
+.practice-footer > span {
+  color: #68765e;
+  font-size: 12px;
+}
+.practice-start {
+  padding: 24px 0;
+}
+.practice-start h2 {
+  font-size: 18px;
+}
+.practice-instructions {
+  padding: 12px 0 0;
+}
+.practice-instructions p {
+  margin-bottom: 6px;
+}
+.exercise-graph-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.exercise-graph-card,
+.linked-resource {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dfe6d9;
+  border-radius: 8px;
+  background: #fff;
+}
+.exercise-graph-card h3,
+.linked-resource h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.function-graph svg {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+}
+.graph-grid line {
+  stroke: #e8ede5;
+  stroke-width: 0.7;
+}
+.graph-grid text,
+.graph-axis-label {
+  fill: #65745f;
+  font-size: 10px;
+}
+.graph-axis line {
+  stroke: #899582;
+  stroke-width: 1;
+}
+.graph-curve {
+  fill: none;
+  stroke: #285b48;
+  stroke-width: 2.3;
+  stroke-linejoin: round;
+}
+.graph-point {
+  fill: #cc7b29;
+  stroke: white;
+  stroke-width: 1.5;
+}
+.graph-probe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.graph-probe input {
+  flex: 1;
+  width: 0;
+  min-width: 40px;
+  accent-color: #285b48;
+}
+.graph-probe output {
+  min-width: 88px;
+  text-align: right;
+}
+.graph-domain {
+  margin: 6px 0 10px;
+}
+.graph-answer {
+  width: 100%;
+}
+.graph-feedback {
+  margin-top: 10px;
+  font-size: 12px;
+}
+.graph-feedback p {
+  margin: 6px 0 0;
+}
+.linked-resources {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.linked-resource > p {
+  margin: 8px 0;
+}
+.resource-metadata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: #68765e;
+}
+.resource-metadata a {
+  text-decoration: underline;
+}
+@media (max-width: 600px) {
+  .learning-drawer .ant-drawer-body {
+    padding: 8px;
+  }
+  .exercise-graph-grid {
+    grid-template-columns: 1fr;
+  }
+  .linked-resource .flex-between {
+    align-items: flex-start;
+  }
+}
 .chat-toolbar {
   flex-wrap: wrap;
 }

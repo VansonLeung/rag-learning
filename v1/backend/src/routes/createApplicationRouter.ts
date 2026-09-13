@@ -5,6 +5,7 @@ import { registerModelSettingsRoutes } from './registerModelSettingsRoutes.js';
 import { registerExplorerRoutes } from './registerExplorerRoutes.js';
 import { registerIndexingJobRoutes } from './registerIndexingJobRoutes.js';
 import { registerRetrievalAndChatRoutes } from './registerRetrievalAndChatRoutes.js';
+import { registerLearningRoutes } from './registerLearningRoutes.js';
 
 export function createApplicationRouter(dependencies: RouterDependencies) {
   const router = Router();
@@ -13,5 +14,6 @@ export function createApplicationRouter(dependencies: RouterDependencies) {
   registerExplorerRoutes(router, dependencies);
   registerIndexingJobRoutes(router, dependencies);
   registerRetrievalAndChatRoutes(router, dependencies);
+  registerLearningRoutes(router, dependencies);
   return router;
 }
