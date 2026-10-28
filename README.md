@@ -7,6 +7,7 @@ A local, single-user RAG application with isolated workspaces and a file explore
 Requires Node.js 22.13+ (Node 24 recommended) and npm.
 
 ```sh
+cd codes/v1/rag-learning
 npm install
 npm run dev
 ```
@@ -58,8 +59,12 @@ Rename and move actions preserve indexes. Folder moves update search scope immed
 
 ## Code layout
 
+The Node project root is `codes/v1/rag-learning/`. Run all npm commands from that directory; `package.json`, `package-lock.json`, `node_modules/`, shared tests, and build configuration live there. Backend and frontend are npm workspaces, alongside the Electron desktop shell.
+
+RAG source documents and curriculum metadata live separately in `docs/curriculums/`, including the HK maths source registry, curriculum map, schema, and Hanlun source notes.
+
 ```text
-v1/backend/src/
+codes/v1/rag-learning/backend/src/
   config/                 Paths and request validation
   database/migrations/    Persistent PostgreSQL schema
   repositories/           Settings and explorer persistence
@@ -69,7 +74,7 @@ v1/backend/src/
   events/                 Change listener subscription and publication
   controllers/            Chat streaming lifecycle
   routes/                 HTTP API composition
-v1/frontend/src/
+codes/v1/rag-learning/frontend/src/
   api/                    JSON and streaming API clients
   hooks/                  Library/job event subscriptions
   features/explorer/      Folder tree, file table, source preview
@@ -83,7 +88,7 @@ Indexing publishes events through a small event bus; the frontend subscribes ove
 
 ## Data and configuration
 
-Data defaults to **`v1/backend/.data`**, with the embedded database under `postgres/` and original files under `uploads/`. Set `RAG_DATA_DIR` to an absolute directory to relocate it. Set `PORT` to change the production backend port; update the Vite proxy if changing the development port. The service binds to `127.0.0.1` and has no account or access-control system.
+Data defaults to **`codes/v1/rag-learning/backend/.data`**, with the embedded database under `postgres/` and original files under `uploads/`. Set `RAG_DATA_DIR` to an absolute directory to relocate it. Set `PORT` to change the production backend port; update the Vite proxy if changing the development port. The service binds to `127.0.0.1` and has no account or access-control system.
 
 Stop the backend before backing up the entire data directory. Keep `postgres/` and `uploads/` together. Browser test data uses temporary directories and never touches your library.
 
@@ -120,7 +125,7 @@ Choose each equation once. Answers save after each selection, and reopening the 
 
 The pilot uses a versioned exercise definition and one native `function_graph_matching` view. It does not yet implement user-defined schemas/views, general subject-package import/export, or unrestricted model-generated exercises. Browser and desktop data remain in their respective workspace databases; ordinary full data-directory backups include practice attempts.
 
-Implementation lives in `v1/backend/src/services/learning/`, `routes/registerLearningRoutes.ts`, and `v1/frontend/src/features/learning/`. Validation covers graph discontinuities, draft conflicts, answer-key separation, marking, workspace isolation, restart persistence, and desktop/mobile browser interactions.
+Implementation lives in `codes/v1/rag-learning/backend/src/services/learning/`, `routes/registerLearningRoutes.ts`, and `codes/v1/rag-learning/frontend/src/features/learning/`. Validation covers graph discontinuities, draft conflicts, answer-key separation, marking, workspace isolation, restart persistence, and desktop/mobile browser interactions.
 
 ## Copying, moving, and drag-and-drop
 
@@ -131,11 +136,11 @@ Implementation lives in `v1/backend/src/services/learning/`, `routes/registerLea
 - A name conflict offers **Keep both**, **Skip existing**, or **Replace existing**. Replacement deletes the matching destination item, including its descendants. Copying over a selected source is prohibited. Multi-item moves and destination copy records commit in one transaction. A selection containing both a parent folder and its descendants is normalized to avoid duplicate copies.
 - Compatible copies reuse extracted text and embeddings with new document/chunk IDs. Incompatible or unindexed copies are queued for indexing with the destination workspace's model settings. Moves within one workspace preserve IDs and indexes.
 
-Workspace lifecycle code lives in `v1/backend/src/services/workspaces/`. Transfer logic lives in `services/explorer/transferExplorerNodes.ts`. Frontend clipboard, drag/drop callbacks, and conflict handling live in `features/explorer/`; workspace selection lives in `features/workspaces/`.
+Workspace lifecycle code lives in `codes/v1/rag-learning/backend/src/services/workspaces/`. Transfer logic lives in `services/explorer/transferExplorerNodes.ts`. Frontend clipboard, drag/drop callbacks, and conflict handling live in `features/explorer/`; workspace selection lives in `features/workspaces/`.
 
 ## Electron desktop application
 
-The desktop shell is under **`v1/desktop`**. The browser app remains available through the original commands.
+The desktop shell is under **`codes/v1/rag-learning/desktop`**. The browser app remains available through the original commands.
 
 ```sh
 npm run desktop:dev      # build, prepare, and launch Electron
@@ -144,7 +149,7 @@ npm run desktop:make     # create installers/archives for this host
 npm run test:desktop     # smoke-test the prepared desktop app
 ```
 
-`desktop:prepare` assembles a standalone app under `v1/desktop/app` with the built backend, frontend, and production dependencies pinned to the root lockfile's direct versions. Forge writes output under `v1/desktop/out`. PGlite/pgvector WASM, PDF.js worker files, and optional native assets remain regular files (`asar: false`) so their runtime paths work in the installed application. Generated staging files, installers, and test data are ignored by Git.
+`desktop:prepare` assembles a standalone app under `codes/v1/rag-learning/desktop/app` with the built backend, frontend, and production dependencies pinned to the root lockfile's direct versions. Forge writes output under `codes/v1/rag-learning/desktop/out`. PGlite/pgvector WASM, PDF.js worker files, and optional native assets remain regular files (`asar: false`) so their runtime paths work in the installed application. Generated staging files, installers, and test data are ignored by Git.
 
 The Electron main process starts the backend in an Electron utility process on an automatically assigned loopback port. The desktop session injects a random authentication token into its backend requests; ordinary browser requests to that port are rejected. The renderer has sandboxing and context isolation enabled, with Node integration disabled. The preload bridge exposes a platform query and forwards validated edit-menu commands; unhandled commands retain normal text editing. Window navigation is restricted to the app; external HTTP(S) links open in the system browser. Closing the app shuts down the backend and database. A single-instance lock prevents a second desktop instance from opening the same profile.
 

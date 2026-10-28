@@ -10,7 +10,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'npx tsx v1/backend/tests/browserApplicationFixture.ts',
+    command: 'npx tsx backend/tests/browserApplicationFixture.ts',
     url: 'http://127.0.0.1:3001/api/health',
     reuseExistingServer: false,
     timeout: 30000,

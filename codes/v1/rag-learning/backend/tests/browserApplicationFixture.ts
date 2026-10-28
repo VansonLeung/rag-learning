@@ -36,7 +36,7 @@ const modelServer = model.listen(3002, '127.0.0.1');
 const directory = await mkdtemp(path.join(os.tmpdir(), 'grove-browser-'));
 const application = await createBackendApplication({
   dataDirectory: directory,
-  frontendDirectory: path.resolve('v1/frontend/dist'),
+  frontendDirectory: path.resolve('frontend/dist'),
 });
 const server = application.app.listen(3001, '127.0.0.1');
 for (const signal of ['SIGINT', 'SIGTERM'] as const)

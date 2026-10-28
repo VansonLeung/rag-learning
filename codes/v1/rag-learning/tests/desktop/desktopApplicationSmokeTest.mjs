@@ -29,7 +29,7 @@ if (executablePath && process.platform === 'darwin') {
 let application;
 async function launch() {
   application = await electron.launch({
-    ...(executablePath ? { executablePath, args: [] } : { args: [path.resolve('v1/desktop/app')] }),
+    ...(executablePath ? { executablePath, args: [] } : { args: [path.resolve('desktop/app')] }),
     env,
     timeout: 60000,
   });
@@ -61,7 +61,7 @@ try {
   await page
     .locator('input[type=file]')
     .first()
-    .setInputFiles(path.resolve('v1/backend/tests/fixtures/orchard.pdf'));
+    .setInputFiles(path.resolve('backend/tests/fixtures/orchard.pdf'));
   try {
     await expect(page.getByText('Indexed', { exact: true })).toBeVisible({ timeout: 30000 });
   } catch (error) {

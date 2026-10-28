@@ -2,22 +2,22 @@
   "name": "rag-learning-explorer",
   "private": true,
   "workspaces": [
-    "v1/backend",
-    "v1/frontend"
+    "backend",
+    "frontend"
   ],
   "scripts": {
-    "dev": "concurrently -k -n backend,frontend \"npm run dev -w v1/backend\" \"npm run dev -w v1/frontend\"",
-    "build": "npm run build -w v1/frontend && npm run build -w v1/backend",
-    "start": "npm run start -w v1/backend",
+    "dev": "concurrently -k -n backend,frontend \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend && npm run build -w backend",
+    "start": "npm run start -w backend",
     "typecheck": "npm run typecheck --workspaces",
-    "test": "npm run test -w v1/backend",
+    "test": "npm run test -w backend",
     "test:browser": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "desktop:prepare": "npm run build && node v1/desktop/scripts/prepareDesktopApplication.mjs",
-    "desktop:dev": "npm run desktop:prepare && node v1/desktop/scripts/launchDesktopDevelopment.mjs",
-    "desktop:package": "npm run desktop:prepare && electron-forge package v1/desktop/app",
-    "desktop:make": "npm run desktop:prepare && electron-forge make v1/desktop/app",
+    "desktop:prepare": "npm run build && node desktop/scripts/prepareDesktopApplication.mjs",
+    "desktop:dev": "npm run desktop:prepare && node desktop/scripts/launchDesktopDevelopment.mjs",
+    "desktop:package": "npm run desktop:prepare && electron-forge package desktop/app",
+    "desktop:make": "npm run desktop:prepare && electron-forge make desktop/app",
     "test:desktop": "node tests/desktop/desktopApplicationSmokeTest.mjs"
   },
   "devDependencies": {
